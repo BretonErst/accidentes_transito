@@ -243,3 +243,86 @@ final_fit %>%
         panel.grid = element_line(color = "grey95")) 
 
 ggsave("image/leo_factores_2.jpg", device = "jpeg", dpi = "retina")
+
+
+# xgboost spec
+xgb_spec <- boost_tree(trees = tune(),
+                       min_n = tune(),
+                       mtry = tune(),
+                       learn_rate = 0.01) %>% 
+  set_engine("xgboost") %>% 
+  set_mode("classification")
+
+
+# hyperparameter tunning
+xgb_tune <- tune_grid(object = acci_wf %>% add_model(xgb_spec), 
+                      resamples = acci_folds,
+                      grid = 6)
+
+# fit resamples
+xgb_res <- acci_wf %>% 
+  add_model(xgb_spec) %>%
+  finalize_workflow(select_best(xgb_tune,
+                                metric = "roc_auc")) %>% 
+  fit_resamples(resamples = acci_folds,
+                control = control_resamples(save_pred = TRUE),
+                metrics = metric_set(accuracy, roc_auc, sensitivity, specificity))
+
+# resampling evaluation
+xgb_res %>% collect_metrics()  
+
+
+# last fit
+xgb_lastfit <- acci_wf %>% 
+  add_model(xgb_spec) %>%
+  finalize_workflow(select_best(xgb_tune,
+                                metric = "roc_auc")) %>%
+  last_fit(acci_split)
+
+# evaluation
+xgb_lastfit %>% 
+  collect_predictions() %>% 
+  roc_curve(truth = heridos,
+            estimate = .pred_0) %>% 
+  ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+  geom_line(color = "darkred") +
+  geom_abline(linetype = "dashed") +
+  coord_equal()
+
+# factor importance
+xgb_lastfit %>% 
+  extract_fit_parsnip() %>% 
+  vip::vi_model() %>% 
+  slice_max(order_by = Importance, n = 7) %>% 
+  ggplot(aes(x = Importance, y = fct_reorder(Variable, Importance))) +
+  geom_col(alpha = 0.6, fill = "#970007") +
+  labs(title = "¿Que factores están más relacionados con el registro de heridos?",
+       subtitle = "Factores reportados en los accidentes de tránsito ocurridos en León",
+       x = "Importancia de factores",
+       y = "Factores reportados",
+       caption = "Fuente: INEGI: Accidentes de Tránsito Terrestre 
+           en Zonas Urbanas y Suburbanas 2021<br>
+           Visualización: Juan L. Bretón, PMP") +
+  theme(text = element_text(family = "Encode Sans Condensed"),
+        plot.title.position = "plot",
+        plot.caption.position = "plot",
+        plot.title = element_text(face = "bold", size = 16),
+        plot.caption = element_markdown(color = "darkgrey", hjust = 0),
+        legend.position = "top",
+        panel.background = element_rect(fill = "#FFFFFF"),
+        axis.line = element_line(color = "darkgrey"),
+        panel.grid = element_line(color = "grey95")) 
+
+ggsave("image/leo_factores_xgb.jpg", device = "jpeg", dpi = "retina")
+
+
+# SHAP
+shape <- shap.prep(xgb_model = xgb_lastfit %>% extract_fit_engine(),
+                   X_train = bake(prep(acci_recipe),
+                                  new_data = NULL,
+                                  has_role("predictor"),
+                                  composition = "matrix"))
+
+# plot summary
+shap.plot.summary(shape)
+
