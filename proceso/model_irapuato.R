@@ -95,6 +95,7 @@ dt02 <- dt01 %>%
                 .fns = as_factor))
 
 
+
 dt02 %>% 
   map(~ sum(is.na(.)))
 
@@ -297,6 +298,7 @@ xgb_lastfit %>%
 xgb_lastfit %>% 
   extract_fit_parsnip() %>% 
   vip::vi_model() %>% 
+  slice_max(order_by = Importance, n = 7) %>% 
   ggplot(aes(x = Importance, y = fct_reorder(Variable, Importance))) +
   geom_col(alpha = 0.6, fill = "#970007") +
   labs(title = "¿Que factores están más relacionados con el registro de heridos?",
