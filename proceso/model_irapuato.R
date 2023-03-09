@@ -226,7 +226,7 @@ final_fit %>%
   arrange(-Importance) %>% 
   slice_head(n = 10) %>% 
   ggplot(aes(x = Importance, y = fct_reorder(Variable, Importance))) +
-  geom_col(alpha = 0.6, fill = "#970007") +
+  geom_col(alpha = 0.85, fill = "#970007") +
   labs(title = "¿Que factores están relacionados con el registro de heridos?",
        subtitle = "Factores reportados en los accidentes de tránsito ocurridos en Irapuato",
        x = "Importancia de factores",
