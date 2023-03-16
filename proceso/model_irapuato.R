@@ -79,16 +79,16 @@ dt02 <- dt01 %>%
                                causaacci == 5 ~ "Otra"),
          caparod = case_when(caparod == 1 ~ "Pavimentada",
                              caparod == 1 ~ "No pavimentada"),
-         sexo = case_when(sexo == 0 ~ "Se fugó",
-                          sexo == 1 ~ "Hombre",
-                          sexo == 2 ~ "Mujer"),
+         sexo = case_when(sexo == 1 ~ "Se fugó",
+                          sexo == 2 ~ "Hombre",
+                          sexo == 3 ~ "Mujer"),
          aliento = case_when(aliento == 4 ~ "Si",
                              aliento == 5 ~ "No",
                              aliento == 6 ~ "Se ignora"),
          cinturon = case_when(cinturon == 7 ~ "Si",
                               cinturon == 8 ~ "No",
                               cinturon == 9 ~ "Se ignora"),
-         clase = case_when(clase == 1 ~ "Fata",
+         clase = case_when(clase == 1 ~ "Fatal",
                            clase == 2 ~ "No fatal",
                            clase == 3 ~ "Solo daños")) %>% 
   mutate(across(.cols = all_of(conv_a_fct), 
@@ -300,7 +300,7 @@ xgb_lastfit %>%
   vip::vi_model() %>% 
   slice_max(order_by = Importance, n = 7) %>% 
   ggplot(aes(x = Importance, y = fct_reorder(Variable, Importance))) +
-  geom_col(alpha = 0.6, fill = "#970007") +
+  geom_col(alpha = 0.85, fill = "#970007") +
   labs(title = "¿Que factores están más relacionados con el registro de heridos?",
        subtitle = "Factores reportados en los accidentes de tránsito ocurridos en Irapuato",
        x = "Importancia de factores",
